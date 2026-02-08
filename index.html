@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pamonha System Cloud</title>
+    <script src="https://cdnjs.cloudflare.com"></script>
+    <style>
+        :root { --pamonha: #f1c40f; --dark: #2c3e50; --success: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
+        .container { max-width: 800px; margin: auto; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 16px; }
+        .btn { cursor: pointer; border: none; border-radius: 8px; padding: 12px; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-save { background: var(--success); width: 100%; margin-top: 15px; }
+        .btn-tool { background: var(--dark); font-size: 12px; padding: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .resumo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .box { background: var(--dark); color: white; padding: 15px; border-radius: 8px; text-align: center; }
+        .box span { display: block; font-size: 20px; color: var(--pamonha); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div style="display:flex; justify-content: space-between; margin-bottom:15px;">
+            <button class="btn btn-tool" onclick="exportar()">📤 Backup</button>
+            <button class="btn btn-tool" onclick="document.getElementById('f').click()">📥 Restaurar</button>
+            <input type="file" id="f" style="display:none" onchange="importar(event)">
+        </div>
+        
+        <div class="grid">
+            <div><label>Preço</label><input type="number" id="preco" value="10.00"></div>
+            <div><label>Vendedor</label><input type="text" id="vend"></div>
+            <div><label>Saída</label><input type="number" id="s" value="0"></div>
+            <div><label>Volta</label><input type="number" id="v" value="0"></div>
+            <div><label>Pix</label><input type="number" id="p" value="0"></div>
+        </div>
+        <input type="hidden" id="editId">
+        <button class="btn btn-save" id="btn" onclick="salvar()">Gravar Acerto Individual</button>
+    </div>
+
+    <div class="card">
+        <table id="t">
+            <thead><tr><th>Vendedor</th><th>Bruto</th><th>Pix</th><th>Dinheiro</th><th>Ações</th></tr></thead>
+            <tbody id="lista"></tbody>
+        </table>
+        <div class="resumo">
+            <div class="box">Total Pix<span id="tP">R$ 0</span></div>
+            <div class="box">Total Dinheiro<span id="tD">R$ 0</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('db_pamonha_v1')) || [];
+    
+    function salvar() {
+        const preco = parseFloat(document.getElementById('preco').value);
+        const vend = document.getElementById('vend').value;
+        const s = parseInt(document.getElementById('s').value);
+        const v = parseInt(document.getElementById('v').value);
+        const p = parseFloat(document.getElementById('p').value) || 0;
+        const editId = document.getElementById('editId').value;
+
+        if(!vend) return alert("Nome?");
+        const vendidos = s - v;
+        const bruto = vendidos * preco;
+        const dinheiro = bruto - p;
+
+        const reg = { id: editId || Date.now().toString(), vend, s, v, p, bruto, dinheiro, data: new Date().toLocaleDateString() };
+
+        if(editId) {
+            db = db.map(i => i.id === editId ? reg : i);
+            document.getElementById('editId').value = "";
+            document.getElementById('btn').innerText = "Gravar Acerto Individual";
+        } else { db.push(reg); }
+
+        atualizar();
+        ["vend","s","v","p"].forEach(id => document.getElementById(id).value = id === "vend" ? "" : 0);
+    }
+
+    function atualizar() {
+        localStorage.setItem('db_pamonha_v1', JSON.stringify(db));
+        const l = document.getElementById('lista');
+        l.innerHTML = "";
+        let tp = 0, td = 0;
+
+        db.forEach(i => {
+            tp += i.p; td += i.dinheiro;
+            l.innerHTML += `<tr>
+                <td>${i.vend}</td><td>${i.bruto.toFixed(2)}</td><td>${i.p.toFixed(2)}</td><td>${i.dinheiro.toFixed(2)}</td>
+                <td><button onclick="editar('${i.id}')">✏️</button> <button onclick="apagar('${i.id}')">🗑️</button></td>
+            </tr>`;
+        });
+        document.getElementById('tP').innerText = `R$ ${tp.toFixed(2)}`;
+        document.getElementById('tD').innerText = `R$ ${td.toFixed(2)}`;
+    }
+
+    function apagar(id) { if(confirm("Apagar?")) { db = db.filter(i => i.id !== id); atualizar(); } }
+    
+    function editar(id) {
+        const i = db.find(x => x.id === id);
+        document.getElementById('vend').value = i.vend;
+        document.getElementById('s').value = i.s;
+        document.getElementById('v').value = i.v;
+        document.getElementById('p').value = i.p;
+        document.getElementById('editId').value = i.id;
+        document.getElementById('btn').innerText = "Confirmar Edição";
+        window.scrollTo(0,0);
+    }
+
+    function exportar() {
+        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = "pamonha_db.json"; a.click();
+    }
+
+    function importar(e) {
+        const fr = new FileReader();
+        fr.onload = (ev) => { db = JSON.parse(ev.target.result); atualizar(); };
+        fr.readAsText(e.target.files[0]);
+    }
+
+    atualizar();
+</script>
+</body>
+</html>
