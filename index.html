@@ -3,130 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pamonha System Cloud</title>
+    <title>Pamonha Analytics Pro</title>
     <script src="https://cdnjs.cloudflare.com"></script>
     <style>
-        :root { --pamonha: #f1c40f; --dark: #2c3e50; --success: #27ae60; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
-        .container { max-width: 800px; margin: auto; padding: 15px; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 16px; }
-        .btn { cursor: pointer; border: none; border-radius: 8px; padding: 12px; font-weight: bold; color: white; transition: 0.3s; }
-        .btn-save { background: var(--success); width: 100%; margin-top: 15px; }
-        .btn-tool { background: var(--dark); font-size: 12px; padding: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        :root { --pamonha: #f1c40f; --dark: #2c3e50; --success: #27ae60; --info: #3498db; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 10px; color: var(--dark); }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        .header-tools { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+        
+        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #666; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        
+        .btn { cursor: pointer; border: none; border-radius: 8px; padding: 12px; font-weight: bold; transition: 0.3s; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-save { background: var(--success); width: 100%; margin-top: 15px; font-size: 1.1em; }
+        .btn-pdf { background: #555; margin-top: 10px; width: 100%; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
         th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-        .resumo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .box { background: var(--dark); color: white; padding: 15px; border-radius: 8px; text-align: center; }
-        .box span { display: block; font-size: 20px; color: var(--pamonha); font-weight: bold; }
+        th { background: #f8f9fa; color: var(--dark); }
+        
+        .resumo-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 20px; }
+        .box { background: var(--dark); color: white; padding: 15px; border-radius: 10px; text-align: center; }
+        .box span { display: block; font-size: 20px; color: var(--pamonha); font-weight: bold; margin-top: 5px; }
+        
+        .analise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        @media (max-width: 600px) { .analise-grid { grid-template-columns: 1fr; } }
+        
+        #fileInput { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Bloco de Ações e Lançamento -->
     <div class="card">
-        <div style="display:flex; justify-content: space-between; margin-bottom:15px;">
-            <button class="btn btn-tool" onclick="exportar()">📤 Backup</button>
-            <button class="btn btn-tool" onclick="document.getElementById('f').click()">📥 Restaurar</button>
-            <input type="file" id="f" style="display:none" onchange="importar(event)">
+        <div class="header-tools">
+            <button class="btn" style="background:var(--dark)" onclick="exportarDB()">📤 Backup</button>
+            <button class="btn" style="background:var(--info)" onclick="document.getElementById('fileInput').click()">📥 Restaurar</button>
+            <input type="file" id="fileInput" accept=".json" onchange="importarDB(event)">
+        </div>
+
+        <h3>📝 Lançamento de Acerto Individual</h3>
+        <div class="grid-inputs">
+            <div><label>💰 Preço Unit.</label><input type="number" id="preco" value="10.00" step="0.50"></div>
+            <div><label>👤 Vendedor</label><input type="text" id="vendedor" placeholder="Nome"></div>
+            <div><label>📤 Saída</label><input type="number" id="saida" value="0"></div>
+            <div><label>📥 Volta</label><input type="number" id="volta" value="0"></div>
+            <div><label>💳 Recebido Pix</label><input type="number" id="pix" value="0" step="0.1"></div>
+            <div><label>💵 Recebido Dinheiro</label><input type="number" id="dinheiro" value="0" step="0.1"></div>
         </div>
         
-        <div class="grid">
-            <div><label>Preço</label><input type="number" id="preco" value="10.00"></div>
-            <div><label>Vendedor</label><input type="text" id="vend"></div>
-            <div><label>Saída</label><input type="number" id="s" value="0"></div>
-            <div><label>Volta</label><input type="number" id="v" value="0"></div>
-            <div><label>Pix</label><input type="number" id="p" value="0"></div>
-        </div>
-        <input type="hidden" id="editId">
-        <button class="btn btn-save" id="btn" onclick="salvar()">Gravar Acerto Individual</button>
+        <input type="hidden" id="editId" value="">
+        <button class="btn btn-save" id="btnAcao" onclick="salvar()">Gravar Dados no Sistema</button>
+        <button class="btn btn-pdf" onclick="gerarPDF()">📄 Gerar Relatório PDF Completo</button>
     </div>
 
+    <!-- Bloco de Histórico -->
     <div class="card">
-        <table id="t">
-            <thead><tr><th>Vendedor</th><th>Bruto</th><th>Pix</th><th>Dinheiro</th><th>Ações</th></tr></thead>
-            <tbody id="lista"></tbody>
-        </table>
-        <div class="resumo">
-            <div class="box">Total Pix<span id="tP">R$ 0</span></div>
-            <div class="box">Total Dinheiro<span id="tD">R$ 0</span></div>
+        <h3>📊 Detalhamento de Vendas</h3>
+        <div style="overflow-x: auto;">
+            <table id="tabelaDados">
+                <thead>
+                    <tr>
+                        <th>Data/Vendedor</th>
+                        <th>Vendidas</th>
+                        <th>Total Bruto</th>
+                        <th>Pix</th>
+                        <th>Dinheiro</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="lista"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bloco de Análise e Totais -->
+    <div class="card">
+        <h3>📈 Análise de Desempenho e Totais Gerais</h3>
+        <div class="resumo-container">
+            <div class="box">Pamonhas Vendidas<span id="tVendidas">0 un</span></div>
+            <div class="box">Faturamento Bruto<span id="tBruto">R$ 0,00</span></div>
+            <div class="box">Total em Pix<span id="tPix">R$ 0,00</span></div>
+            <div class="box">Total em Dinheiro<span id="tDin">R$ 0,00</span></div>
+        </div>
+
+        <div class="analise-grid">
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                <label>🏆 Melhor Vendedor (Volume)</label>
+                <div id="rankVendas" style="font-weight: bold; font-size: 1.2em; color: var(--success);">---</div>
+            </div>
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                <label>⚠️ Alerta de Diferença (Quebra)</label>
+                <div id="alertaQuebra" style="font-size: 0.9em;">Sem divergências detectadas.</div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('db_pamonha_v1')) || [];
-    
+    let db = JSON.parse(localStorage.getItem('pamonha_v4_db')) || [];
+
     function salvar() {
-        const preco = parseFloat(document.getElementById('preco').value);
-        const vend = document.getElementById('vend').value;
-        const s = parseInt(document.getElementById('s').value);
-        const v = parseInt(document.getElementById('v').value);
-        const p = parseFloat(document.getElementById('p').value) || 0;
+        const v = document.getElementById('vendedor').value;
+        if (!v) return alert("Informe o vendedor!");
+
+        const preco = parseFloat(document.getElementById('preco').value) || 0;
+        const s = parseInt(document.getElementById('saida').value) || 0;
+        const vol = parseInt(document.getElementById('volta').value) || 0;
+        const px = parseFloat(document.getElementById('pix').value) || 0;
+        const din = parseFloat(document.getElementById('dinheiro').value) || 0;
         const editId = document.getElementById('editId').value;
 
-        if(!vend) return alert("Nome?");
-        const vendidos = s - v;
-        const bruto = vendidos * preco;
-        const dinheiro = bruto - p;
+        const vendidas = s - vol;
+        const brutoEsperado = vendidas * preco;
+        const recebidoTotal = px + din;
+        const diferenca = recebidoTotal - brutoEsperado;
 
-        const reg = { id: editId || Date.now().toString(), vend, s, v, p, bruto, dinheiro, data: new Date().toLocaleDateString() };
+        const registro = {
+            id: editId || Date.now().toString(),
+            vendedor: v, saida: s, volta: vol, vendidas, bruto: brutoEsperado,
+            pix: px, dinheiro: din, preco, data: new Date().toLocaleDateString('pt-BR'),
+            quebra: diferenca
+        };
 
-        if(editId) {
-            db = db.map(i => i.id === editId ? reg : i);
+        if (editId) {
+            db = db.map(item => item.id === editId ? registro : item);
             document.getElementById('editId').value = "";
-            document.getElementById('btn').innerText = "Gravar Acerto Individual";
-        } else { db.push(reg); }
+            document.getElementById('btnAcao').innerText = "Gravar Dados no Sistema";
+            document.getElementById('btnAcao').style.background = "var(--success)";
+        } else {
+            db.push(registro);
+        }
 
-        atualizar();
-        ["vend","s","v","p"].forEach(id => document.getElementById(id).value = id === "vend" ? "" : 0);
+        persistir();
+        limpar();
     }
 
-    function atualizar() {
-        localStorage.setItem('db_pamonha_v1', JSON.stringify(db));
-        const l = document.getElementById('lista');
-        l.innerHTML = "";
-        let tp = 0, td = 0;
+    function persistir() {
+        localStorage.setItem('pamonha_v4_db', JSON.stringify(db));
+        atualizarUI();
+    }
+
+    function atualizarUI() {
+        const lista = document.getElementById('lista');
+        lista.innerHTML = "";
+        let tv = 0, tb = 0, tp = 0, td = 0;
+        let vendedoresMap = {};
 
         db.forEach(i => {
-            tp += i.p; td += i.dinheiro;
-            l.innerHTML += `<tr>
-                <td>${i.vend}</td><td>${i.bruto.toFixed(2)}</td><td>${i.p.toFixed(2)}</td><td>${i.dinheiro.toFixed(2)}</td>
-                <td><button onclick="editar('${i.id}')">✏️</button> <button onclick="apagar('${i.id}')">🗑️</button></td>
-            </tr>`;
+            tv += i.vendidas; tb += i.bruto; tp += i.pix; td += i.dinheiro;
+            
+            // Logica para Rank
+            vendedoresMap[i.vendedor] = (vendedoresMap[i.vendedor] || 0) + i.vendidas;
+
+            const statusCor = i.quebra < 0 ? 'var(--danger)' : (i.quebra > 0 ? 'var(--success)' : 'gray');
+            const statusTexto = i.quebra === 0 ? "Ok" : (i.quebra > 0 ? "+ R$"+i.quebra.toFixed(2) : "- R$"+Math.abs(i.quebra).toFixed(2));
+
+            lista.innerHTML += `
+                <tr>
+                    <td><strong>${i.vendedor}</strong><br><small>${i.data}</small></td>
+                    <td>${i.vendidas}</td>
+                    <td>R$ ${i.bruto.toFixed(2)}</td>
+                    <td>R$ ${i.pix.toFixed(2)}</td>
+                    <td>R$ ${i.dinheiro.toFixed(2)}</td>
+                    <td style="color:${statusCor}; font-weight:bold">${statusTexto}</td>
+                    <td>
+                        <button onclick="editar('${i.id}')" style="background:var(--info); color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">✏️</button>
+                        <button onclick="excluir('${i.id}')" style="background:var(--danger); color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">🗑️</button>
+                    </td>
+                </tr>
+            `;
         });
-        document.getElementById('tP').innerText = `R$ ${tp.toFixed(2)}`;
-        document.getElementById('tD').innerText = `R$ ${td.toFixed(2)}`;
+
+        document.getElementById('tVendidas').innerText = `${tv} un`;
+        document.getElementById('tBruto').innerText = `R$ ${tb.toFixed(2)}`;
+        document.getElementById('tPix').innerText = `R$ ${tp.toFixed(2)}`;
+        document.getElementById('tDin').innerText = `R$ ${td.toFixed(2)}`;
+
+        // Análise de Melhor Vendedor
+        let melhorV = Object.keys(vendedoresMap).reduce((a, b) => vendedoresMap[a] > vendedoresMap[b] ? a : b, "---");
+        document.getElementById('rankVendas').innerText = melhorV !== "---" ? `${melhorV} (${vendedoresMap[melhorV]} un)` : "---";
     }
 
-    function apagar(id) { if(confirm("Apagar?")) { db = db.filter(i => i.id !== id); atualizar(); } }
-    
     function editar(id) {
         const i = db.find(x => x.id === id);
-        document.getElementById('vend').value = i.vend;
-        document.getElementById('s').value = i.s;
-        document.getElementById('v').value = i.v;
-        document.getElementById('p').value = i.p;
+        document.getElementById('vendedor').value = i.vendedor;
+        document.getElementById('saida').value = i.saida;
+        document.getElementById('volta').value = i.volta;
+        document.getElementById('pix').value = i.pix;
+        document.getElementById('dinheiro').value = i.dinheiro;
+        document.getElementById('preco').value = i.preco;
         document.getElementById('editId').value = i.id;
-        document.getElementById('btn').innerText = "Confirmar Edição";
+        document.getElementById('btnAcao').innerText = "Confirmar Alteração";
+        document.getElementById('btnAcao').style.background = "var(--info)";
         window.scrollTo(0,0);
     }
 
-    function exportar() {
-        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = "pamonha_db.json"; a.click();
+    function excluir(id) { if(confirm("Apagar registro?")) { db = db.filter(x => x.id !== id); persistir(); } }
+
+    function gerarPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("RELATÓRIO GERAL - PAMONHARIA", 20, 20);
+        let y = 40;
+        db.forEach(i => {
+            doc.text(`${i.data} - ${i.vendedor}: ${i.vendidas} un | Total: R$ ${i.bruto.toFixed(2)}`, 20, y);
+            y += 10;
+        });
+        doc.save("relatorio_pamonhas.pdf");
     }
 
-    function importar(e) {
+    function exportarDB() {
+        const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "banco_pamonhas.json";
+        a.click();
+    }
+
+    function importarDB(e) {
         const fr = new FileReader();
-        fr.onload = (ev) => { db = JSON.parse(ev.target.result); atualizar(); };
+        fr.onload = (ev) => { db = JSON.parse(ev.target.result); persistir(); };
         fr.readAsText(e.target.files[0]);
     }
 
-    atualizar();
+    function limpar() {
+        document.getElementById('vendedor').value = "";
+        document.getElementById('saida').value = 0;
+        document.getElementById('volta').value = 0;
+        document.getElementById('pix').value = 0;
+        document.getElementById('dinheiro').value = 0;
+        document.getElementById('editId').value = "";
+    }
+
+    atualizarUI();
 </script>
 </body>
 </html>
